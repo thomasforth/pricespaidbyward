@@ -3,8 +3,8 @@ Using [Land Registry open data on home sales prices](http://landregistry.data.go
 
 ## Usage
 The software is written in C# and WPF. The included binary should run on any x64 Windows machine. You will need about 5GB of free RAM to parse the full prices paid file but much less to parse a monthly extract. The software expects three files to be in the same folder as the .exe,
-1. `allpostcodes.csv`
-2. `Ward_to_Westminster_Parliamentary_Constituency_to_Local_Authority_District_December_2016_Lookup_in_the_United_Kingdom.csv`
+1. `Postcode_to_LocalAuthorityCode_to_Wardcode.csv`
+2. `2015.04.03.postcode_to_constituency_lookup.tsv`
 3. `Ward_to_Local_Authority_District_to_County_to_Region_to_Country_December_2016_Lookup_in_United_Kingdom_V2.csv`
 If they're not there it will crash.
 It will ask you to point to a third file containing [prices paid data from The Land Registry](http://landregistry.data.gov.uk/) -- I strongly recommend using one month of data during testing. You can use the full dataset later.
@@ -22,7 +22,7 @@ The software works by listing all prices paid in an area from largest to smalles
 ## Attributions
 The code itself relies on no other work, but the included data files have licenses.
 1. The Postcode to Ward code lookup is from [Code-Point Open](https://www.ordnancesurvey.co.uk/business-and-government/products/code-point-open.html) by the Ordnance Survey. It contains OS data © Crown copyright and database right 2017. It contains Royal Mail data © Royal Mail copyright and Database right 2017. It contains National Statistics data © Crown copyright and database right 2017.
-2. The [Ward to Local Authority and Parliamentary Constituency lookup](http://geoportal.statistics.gov.uk/datasets/f52c48ea5cf2494b824d35f4be88f2ec_0) is via The ONS and available under a [custom version of the Open Government License](https://www.ons.gov.uk/methodology/geography/licences).
+2. The [Postcode to Parliamentary Constituency lookup](https://github.com/flashton2003/postcode_to_constituency) is via Flashtron2003 on GitHub.
 3. The [Ward to Region Code lookup](http://geoportal.statistics.gov.uk/datasets/ward-to-local-authority-district-to-county-to-region-to-country-december-2016-lookup-in-united-kingdom-v2) is via The ONS and available under a [custom version of the Open Government License](https://www.ons.gov.uk/methodology/geography/licences).
 4. The Land Registry data that this tool is designed to parse is available under the [Open Government License](http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/). The Data produced by HM Land Registry © Crown copyright 2017.
 
