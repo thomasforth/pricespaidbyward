@@ -7,7 +7,7 @@ The software is written in C# and WPF. The included binary should run on any x64
 2. `2015.04.03.postcode_to_constituency_lookup.tsv`
 3. `Ward_to_Local_Authority_District_to_County_to_Region_to_Country_December_2016_Lookup_in_United_Kingdom_V2.csv`
 If they're not there it will crash.
-It will ask you to point to a third file containing [prices paid data from The Land Registry](http://landregistry.data.gov.uk/) -- I strongly recommend using one month of data during testing. You can use the full dataset later.
+It will ask you to point to a third file containing [prices paid data from The Land Registry](http://landregistry.data.gov.uk/) -- I strongly recommend using the most recent year of data during testing. You can use the full dataset later.
 
 The software creates two outputs,
 1. `pricespaid_augmented.tsv` -- a tab-seperated value with the following columns -- Sale Year, Ward Code, Local Authority Code, Constituency Code, NUTS2 region code, Price Paid. Each row represents a home sale.
