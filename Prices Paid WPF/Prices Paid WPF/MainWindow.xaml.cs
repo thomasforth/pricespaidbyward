@@ -37,7 +37,7 @@ namespace Prices_Paid_WPF
         {
             Status.Text = "Reading local authorities file.";
             // regions files has columns -- LA code     LA name 	Region code 	Region name 	NUTS region
-            string regionsfilename = @"C:\Users\thoma\Documents\PricesPaidRunningFolder\Local_Authority_District_to_Region.tsv";
+            string regionsfilename = @"./Local_Authority_District_to_Region.tsv";
             //StorageFile regionsFile = await File StorageFile.GetFileFromApplicationUriAsync(new Uri(regionsfilename));
 
             List<string> regionlines = new List<string>();
@@ -60,7 +60,7 @@ namespace Prices_Paid_WPF
             Status.Text = "Reading constituencies file.";
             // constituency file has columns -- postcode    constituencycode    constituencyname
 
-            string constituenciesfilename = @"C:\Users\thoma\Documents\PricesPaidRunningFolder\2015.04.03.postcode_to_constituency_lookup.tsv";
+            string constituenciesfilename = @"./2015.04.03.postcode_to_constituency_lookup.tsv";
             //StorageFile regionsFile = await File StorageFile.GetFileFromApplicationUriAsync(new Uri(regionsfilename));
             //IList<string> regionlines = await FileIO.ReadLinesAsync(regionsFile);
             string[] constituencylines = File.ReadAllLines(constituenciesfilename);
@@ -78,7 +78,7 @@ namespace Prices_Paid_WPF
             // postcode file has columns -- Postcode	Positional_quality_indicator	Eastings	Northings	Country_code	NHS_regional_HA_code	NHS_HA_code	Admin_county_code	Admin_district_code	Admin_ward_code
 
             Status.Text = "Reading postcode file.";
-            string filename = @"C:\Users\thoma\Documents\PricesPaidRunningFolder\Postcode_to_LocalAuthorityCode_to_Wardcode.csv";
+            string filename = @"./Postcode_to_LocalAuthorityCode_to_Wardcode.csv";
             //StorageFile sFile = await StorageFile.GetFileFromApplicationUriAsync(new Uri(filename));
             //IList<string> lines = await FileIO.ReadLinesAsync(sFile);
             string[] lines = File.ReadAllLines(filename);
@@ -191,26 +191,33 @@ namespace Prices_Paid_WPF
 
                             string trimmedPostcode = splitLine[3].Replace("\"", String.Empty).Replace(" ", String.Empty);
 
-                            if (WardLookup.TryGetValue(trimmedPostcode, out wardcode) == false)
-                            {
+                            string saleType = splitLine[4].Replace("\"", String.Empty);
+                            if (saleType == "O") {
+                                // these do not seem to be residential sales and are excluded.
                             }
                             else
                             {
-                                DistrictLookup.TryGetValue(trimmedPostcode, out districtcode);
-                                NUTSLookup.TryGetValue(trimmedPostcode, out NUTScode);
-                                ConstituencyLookup.TryGetValue(trimmedPostcode, out constituencycode);
+                                if (WardLookup.TryGetValue(trimmedPostcode, out wardcode) == false)
+                                {
+                                }
+                                else
+                                {
+                                    DistrictLookup.TryGetValue(trimmedPostcode, out districtcode);
+                                    NUTSLookup.TryGetValue(trimmedPostcode, out NUTScode);
+                                    ConstituencyLookup.TryGetValue(trimmedPostcode, out constituencycode);
 
-                                PricePaid _pricePaid = new PricePaid();
-                                //_pricePaid.saleDate = SaleDate;
-                                _pricePaid.year = SaleDate.Year;
-                                _pricePaid.wardcode = wardcode;
-                                _pricePaid.districtcode = districtcode;
-                                _pricePaid.NUTScode = NUTScode;
-                                _pricePaid.price = pricePaid;
-                                _pricePaid.constituencycode = constituencycode;
-                                ListOfPrices.Add(_pricePaid);
+                                    PricePaid _pricePaid = new PricePaid();
+                                    //_pricePaid.saleDate = SaleDate;
+                                    _pricePaid.year = SaleDate.Year;
+                                    _pricePaid.wardcode = wardcode;
+                                    _pricePaid.districtcode = districtcode;
+                                    _pricePaid.NUTScode = NUTScode;
+                                    _pricePaid.price = pricePaid;
+                                    _pricePaid.constituencycode = constituencycode;
+                                    ListOfPrices.Add(_pricePaid);
 
-                                ppoutputText.Add(SaleDate.Year + "\t" + wardcode + "\t" + districtcode + "\t" + constituencycode + "\t" + NUTScode + "\t" + pricePaid);
+                                    ppoutputText.Add(SaleDate.Year + "\t" + wardcode + "\t" + districtcode + "\t" + constituencycode + "\t" + NUTScode + "\t" + pricePaid);
+                                }
                             }
 
                         }
