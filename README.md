@@ -21,6 +21,10 @@ The software works by listing all prices paid in an area from largest to smalles
 
 ## Type of sales included
 The prices paid dataset reports sales data for five types of housing. Specifically, [`D = Detached, S = Semi-Detached, T = Terraced, F = Flats/Maisonettes, O = Other`](https://www.gov.uk/guidance/about-the-price-paid-data#explanations-of-column-headers-in-the-ppd). We exclude sales ot type O. There are very few such sales. They are regularly extremely expensive and often refer to sales that don't seem residential.
+There are two possible values for PPD Category Type in the prices paid dataset. We exclude type "B" as these homes are sold at something other than the full market value. [Further explanation](https://www.gov.uk/guidance/about-the-price-paid-data#explanations-of-column-headers-in-the-ppd).
+
+## Inflation
+Prices are expressed in constant 2015 £s, deflated using [The ONS monthly CPI deflator](https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/d7bt/mm23).
 
 ## Attributions
 The code itself relies on no other work, but the included data files have licenses.
