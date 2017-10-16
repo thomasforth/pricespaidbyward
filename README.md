@@ -2,12 +2,14 @@
 Using [Land Registry open data on home sales prices](http://landregistry.data.gov.uk/) to calculate the median price paid for UK home sales by ward, local authority, NUTS2 region, and 2017 UK Parliamentary constituency in England & Wales.
 
 ## Usage
-The software is written in C# and WPF. The included binary should run on any x64 Windows machine. You will need about 5GB of free RAM to parse the full prices paid file but much less to parse a monthly extract. The software expects three files to be in the same folder as the .exe,
+The software is written in C# and WPF. The included binary should run on any x64 Windows machine. You will need about 5GB of free RAM to parse the full prices paid file but much less to parse a monthly extract. The software expects four files to be in the same folder as the .exe,
 1. `Postcode_to_LocalAuthorityCode_to_Wardcode.csv`
 2. `2015.04.03.postcode_to_constituency_lookup.tsv`
 3. `Ward_to_Local_Authority_District_to_County_to_Region_to_Country_December_2016_Lookup_in_United_Kingdom_V2.csv`
+4. `CPI_deflator_2017_October2017.csv`
+
 If they're not there it will crash.
-It will ask you to point to a third file containing [prices paid data from The Land Registry](http://landregistry.data.gov.uk/) -- I strongly recommend using the most recent year of data during testing. You can use the full dataset later.
+It will ask you to point to a fifth file containing [prices paid data from The Land Registry](http://landregistry.data.gov.uk/) -- I strongly recommend using the most recent year of data during testing. You can use the full dataset later.
 
 The software creates two outputs,
 1. `pricespaid_augmented.tsv` -- a tab-seperated value with the following columns -- Sale Year, Ward Code, Local Authority Code, Constituency Code, NUTS2 region code, Price Paid. Each row represents a home sale.
@@ -24,7 +26,7 @@ The prices paid dataset reports sales data for five types of housing. Specifical
 There are two possible values for PPD Category Type in the prices paid dataset. We exclude type "B" as these homes are sold at something other than the full market value. [Further explanation](https://www.gov.uk/guidance/about-the-price-paid-data#explanations-of-column-headers-in-the-ppd).
 
 ## Inflation
-Prices are expressed in constant 2015 £s, deflated using [The ONS monthly CPI deflator](https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/d7bt/mm23).
+Prices are expressed in constant 2017 £s (July 2017 = 100), deflated using [The ONS monthly CPI deflator](https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/d7bt/mm23).
 
 ## Attributions
 The code itself relies on no other work, but the included data files have licenses.
@@ -32,6 +34,7 @@ The code itself relies on no other work, but the included data files have licens
 2. The [Postcode to Parliamentary Constituency lookup](https://github.com/flashton2003/postcode_to_constituency) is via Flashtron2003 on GitHub.
 3. The [Ward to Region Code lookup](http://geoportal.statistics.gov.uk/datasets/ward-to-local-authority-district-to-county-to-region-to-country-december-2016-lookup-in-united-kingdom-v2) is via The ONS and available under a [custom version of the Open Government License](https://www.ons.gov.uk/methodology/geography/licences).
 4. The Land Registry data that this tool is designed to parse is available under the [Open Government License](http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/). The Data produced by HM Land Registry © Crown copyright 2017.
+5. The inflation data is from  [The ONS monthly CPI deflator](https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/d7bt/mm23).
 
 ## License
 The software is available under a [CC-BY 4.0 license](https://creativecommons.org/licenses/by/4.0/). You are free to use and adapt the code however you like, with attributions. 
