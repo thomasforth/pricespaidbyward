@@ -21,7 +21,7 @@ namespace Prices_Paid_WPF
             if (File.Exists("./pricespaid_augmented.tsv"))
             {
                 LoadPostcodeButton.IsEnabled = false;
-                Status.Text = "Data will be loaded from pricespaid_augmented.tsv -- if this is out-of-date, delete it and restart this applications.";
+                Status.Text = "Data will be loaded from pricespaid_augmented.tsv -- if this is out-of-date, delete it and restart this application.";
             }
         }
 
@@ -29,7 +29,6 @@ namespace Prices_Paid_WPF
         private Dictionary<string, string> DistrictLookup = new Dictionary<string, string>();
         private Dictionary<string, string> NUTSLookup = new Dictionary<string, string>();
         private Dictionary<string, string> ConstituencyLookup = new Dictionary<string, string>();
-
 
         private Dictionary<string, string> DistrictToNUTSLookup = new Dictionary<string, string>();
 
@@ -78,7 +77,8 @@ namespace Prices_Paid_WPF
             // postcode file has columns -- Postcode	Positional_quality_indicator	Eastings	Northings	Country_code	NHS_regional_HA_code	NHS_HA_code	Admin_county_code	Admin_district_code	Admin_ward_code
 
             Status.Text = "Reading postcode file.";
-            string filename = @"./Postcode_to_LocalAuthorityCode_to_Wardcode.csv";
+            //string filename = @"./Postcode_to_LocalAuthorityCode_to_Wardcode.csv";
+            string filename = @"./postcode_toward_tolocalauthority.tsv";
             //StorageFile sFile = await StorageFile.GetFileFromApplicationUriAsync(new Uri(filename));
             //IList<string> lines = await FileIO.ReadLinesAsync(sFile);
             string[] lines = File.ReadAllLines(filename);
@@ -88,10 +88,10 @@ namespace Prices_Paid_WPF
             {
                 try
                 {
-                    string[] splitLine = line.Split(',');
+                    string[] splitLine = line.Split('\t');
                     string postcode = splitLine[0].Replace("\"", String.Empty).Replace(" ", String.Empty);
-                    string districtcode = splitLine[1].Replace("\"", String.Empty);
-                    string wardcode = splitLine[2].Replace("\"", String.Empty);
+                    string districtcode = splitLine[2].Replace("\"", String.Empty);
+                    string wardcode = splitLine[1].Replace("\"", String.Empty);
                     WardLookup.Add(postcode, wardcode);
                     DistrictLookup.Add(postcode, districtcode);
 
@@ -137,6 +137,7 @@ namespace Prices_Paid_WPF
                         _pricePaid.constituencycode = splitLine[3];
                         _pricePaid.NUTScode = splitLine[4];
                         _pricePaid.price = int.Parse(splitLine[5]);
+                        _pricePaid.deflatedPrice = int.Parse(splitLine[6]);
 
                         ListOfPrices.Add(_pricePaid);
 
@@ -192,8 +193,10 @@ namespace Prices_Paid_WPF
                             string trimmedPostcode = splitLine[3].Replace("\"", String.Empty).Replace(" ", String.Empty);
 
                             string saleType = splitLine[4].Replace("\"", String.Empty);
-                            if (saleType == "O") {
-                                // these do not seem to be residential sales and are excluded.
+                            string atFullValue = splitLine[14].Replace("\"", String.Empty);
+                            if (saleType == "O" || atFullValue == "B") {
+                                // saleType O are not residential sales and are excluded.
+                                // atFullValue B is below full value and is excluded on advice from Land Registry and the BBC
                             }
                             else
                             {
@@ -209,14 +212,16 @@ namespace Prices_Paid_WPF
                                     PricePaid _pricePaid = new PricePaid();
                                     //_pricePaid.saleDate = SaleDate;
                                     _pricePaid.year = SaleDate.Year;
+                                    _pricePaid.month = SaleDate.Month;
                                     _pricePaid.wardcode = wardcode;
                                     _pricePaid.districtcode = districtcode;
                                     _pricePaid.NUTScode = NUTScode;
                                     _pricePaid.price = pricePaid;
+                                    _pricePaid.deflatedPrice = calculateDeflatedPrice(SaleDate.Month, SaleDate.Year, pricePaid);
                                     _pricePaid.constituencycode = constituencycode;
                                     ListOfPrices.Add(_pricePaid);
 
-                                    ppoutputText.Add(SaleDate.Year + "\t" + wardcode + "\t" + districtcode + "\t" + constituencycode + "\t" + NUTScode + "\t" + pricePaid);
+                                    ppoutputText.Add(SaleDate.Year + "\t" + wardcode + "\t" + districtcode + "\t" + constituencycode + "\t" + NUTScode + "\t" + pricePaid + "\t" + _pricePaid.deflatedPrice);
                                 }
                             }
 
@@ -243,7 +248,48 @@ namespace Prices_Paid_WPF
             }
         }
 
-        List<string> outputText = new List<string>();
+        List<Deflators> deflatorsList = new List<Deflators>();
+        List<string> ONSMonthNames = new List<string> { "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC" };
+        private int calculateDeflatedPrice(int month, int year, int nominalPrice)
+        {
+            // if not loaded, load the deflators
+            if (deflatorsList.Count == 0)
+            {
+                string regionsfilename = @"./CPI_deflator_2017_October2017.csv";
+                //StorageFile regionsFile = await File StorageFile.GetFileFromApplicationUriAsync(new Uri(regionsfilename));
+                List<string> deflatorLines = File.ReadAllLines(regionsfilename).ToList();
+
+                for (int i= 8; i < deflatorLines.Count; i++)
+                {
+                    string[] splitline = deflatorLines[i].Split(',');
+                    string yeararea = splitline[0];
+                    string[] splityear = yeararea.Split(' ');
+                    string monthName = splityear[1];
+                    int monthIndex = ONSMonthNames.IndexOf(monthName);
+                    Deflators monthlyDeflator = new Deflators();
+                    monthlyDeflator.month = monthIndex;
+                    monthlyDeflator.year = int.Parse(splityear[0]);
+                    monthlyDeflator.deflator = decimal.Parse(splitline[1]);
+                    deflatorsList.Add(monthlyDeflator);
+                }
+            }
+
+            // NOT IMPLEMENTED YET
+            decimal deflator = deflatorsList.Where(x => x.month == month && x.year == year).First().deflator;
+            decimal deflatedPrice = nominalPrice * 100 / deflator;
+            return (int)deflatedPrice;
+        }
+
+        public class Deflators
+        {
+            public int month { get; set; }
+            public int year { get; set; }
+            public decimal deflator { get; set; }
+        }
+
+        List<string> RealOutputText = new List<string>();
+        List<string> NominalOutputText = new List<string>();
+
         private async void CreateOutputButton_Tapped(object sender, RoutedEventArgs e)
         {
             // get list of unique wards
@@ -290,7 +336,9 @@ namespace Prices_Paid_WPF
             // loop through all years
             foreach (int Year in UniqueYears)
             {
-                outputText.Clear();
+                RealOutputText.Clear();
+                NominalOutputText.Clear();
+
                 Status.Text = "Analysing sales for " + Year;
 
                 // List method
@@ -299,16 +347,27 @@ namespace Prices_Paid_WPF
                 if (WardCheckBox.IsChecked == true) {
                     // for every ward, calculate the median price
                     int count = 0;
+                    UniqueWardCodes.Remove("");
                     foreach (string wardcode in UniqueWardCodes)
                     {
-                        List<PricePaid> SalesIntheWard = SalesThisYear.Where(x => x.wardcode == wardcode).OrderBy(x => x.price).ToList();
+                        List<PricePaid> SalesIntheWard = SalesThisYear.Where(x => x.wardcode == wardcode).OrderBy(x => x.deflatedPrice).ToList();
 
-                        int medianPrice = 0;
-                        if (SalesIntheWard.Count > 1)
+                        int medianRealPrice = 0;
+                        int medianNominalPrice = 0;
+
+                        if (SalesIntheWard.Count < 10)
                         {
-                            medianPrice = SalesIntheWard.ElementAt((int)Math.Floor((decimal)SalesIntheWard.Count / 2)).price;
+                            // fewer than 10 sales in a ward and we don't output a value
+                            NominalOutputText.Add(wardcode + "\t" + Year + "\t" + "" + "\t" + SalesIntheWard.Count);
+                            RealOutputText.Add(wardcode + "\t" + Year + "\t" + "" + "\t" + SalesIntheWard.Count);
                         }
-                        outputText.Add(wardcode + "\t" + Year + "\t" + medianPrice + "\t" + SalesIntheWard.Count);
+                        else { 
+                            medianNominalPrice = SalesIntheWard.ElementAt((int)Math.Floor((decimal)SalesIntheWard.Count / 2)).deflatedPrice;
+                            medianRealPrice = SalesIntheWard.ElementAt((int)Math.Floor((decimal)SalesIntheWard.Count / 2)).price;
+                            NominalOutputText.Add(wardcode + "\t" + Year + "\t" + medianNominalPrice + "\t" + SalesIntheWard.Count);
+                            RealOutputText.Add(wardcode + "\t" + Year + "\t" + medianRealPrice + "\t" + SalesIntheWard.Count);
+                        }
+
 
                         count++;
                         if (count % 10 == 0)
@@ -323,16 +382,24 @@ namespace Prices_Paid_WPF
                 {
                     // for every district, calculate the median price
                     int districtcount = 0;
+                    UniqueDistrictCodes.Remove("");
                     foreach (string districtcode in UniqueDistrictCodes)
                     {
-                        List<PricePaid> SalesIntheDistrict = SalesThisYear.Where(x => x.districtcode == districtcode).OrderBy(x => x.price).ToList();
-                        int medianPrice = 0;
+                        List<PricePaid> SalesIntheDistrict = SalesThisYear.Where(x => x.districtcode == districtcode).OrderBy(x => x.deflatedPrice).ToList();
+
+                        int medianRealPrice = 0;
+                        int medianNominalPrice = 0;
+
                         if (SalesIntheDistrict.Count > 1)
                         {
                             // this isn't precisely the median -- but the tiny error it introduces is so small that it doesn't matter. And it's worth it for the simplicity of the outcome.
-                            medianPrice = SalesIntheDistrict.ElementAt((int)Math.Floor((decimal)SalesIntheDistrict.Count / 2)).price;
+                            medianRealPrice = SalesIntheDistrict.ElementAt((int)Math.Floor((decimal)SalesIntheDistrict.Count / 2)).deflatedPrice;
+                            medianNominalPrice = SalesIntheDistrict.ElementAt((int)Math.Floor((decimal)SalesIntheDistrict.Count / 2)).price;
                         }
-                        outputText.Add(districtcode + "\t" + Year + "\t" + medianPrice + "\t" + SalesIntheDistrict.Count);
+
+                        RealOutputText.Add(districtcode + "\t" + Year + "\t" + medianRealPrice + "\t" + SalesIntheDistrict.Count);
+                        NominalOutputText.Add(districtcode + "\t" + Year + "\t" + medianNominalPrice + "\t" + SalesIntheDistrict.Count);
+
                         //await FileIO.AppendTextAsync(OutputFile, districtcode + "\t" + Year + "\t" + medianPrice + "\n");
                         districtcount++;
                         if (districtcount % 10 == 0)
@@ -347,18 +414,24 @@ namespace Prices_Paid_WPF
                 {
                     // for every constituency, calculate the median price
                     int constituencycount = 0;
+                    UniqueConstituencyCodes.Remove("");
                     foreach (string constituencycode in UniqueConstituencyCodes)
                     {
-                        List<PricePaid> SalesIntheRegion = SalesThisYear.Where(x => x.constituencycode == constituencycode).OrderBy(x => x.price).ToList();
+                        List<PricePaid> SalesIntheRegion = SalesThisYear.Where(x => x.constituencycode == constituencycode).OrderBy(x => x.deflatedPrice).ToList();
 
-                        int medianPrice = 0;
+                        int medianRealPrice = 0;
+                        int medianNominalPrice = 0;
                         if (SalesIntheRegion.Count > 1)
                         {
                             // this isn't precisely the median -- but the tiny error it introduces is so small that it doesn't matter. And it's worth it for the simplicity of the outcome.
-                            medianPrice = SalesIntheRegion.ElementAt((int)Math.Floor((decimal)SalesIntheRegion.Count / 2)).price;
+                            medianRealPrice = SalesIntheRegion.ElementAt((int)Math.Floor((decimal)SalesIntheRegion.Count / 2)).deflatedPrice;
+                            medianNominalPrice = SalesIntheRegion.ElementAt((int)Math.Floor((decimal)SalesIntheRegion.Count / 2)).price;
                         }
-                        outputText.Add(constituencycode + "\t" + Year + "\t" + medianPrice + "\t" + SalesIntheRegion.Count);
+                        RealOutputText.Add(constituencycode + "\t" + Year + "\t" + medianRealPrice + "\t" + SalesIntheRegion.Count);
+                        NominalOutputText.Add(constituencycode + "\t" + Year + "\t" + medianNominalPrice + "\t" + SalesIntheRegion.Count);
+
                         //await FileIO.AppendTextAsync(OutputFile, regioncode + "\t" + Year + "\t" + medianPrice + "\n");
+
                         constituencycount++;
                         if (constituencycount % 1 == 0)
                         {
@@ -372,17 +445,22 @@ namespace Prices_Paid_WPF
                 {
                     // for every NUTScode, calculate the median price
                     int regioncount = 0;
+                    UniqueRegionCodes.Remove("");
                     foreach (string regioncode in UniqueRegionCodes)
                     {
-                        List<PricePaid> SalesIntheRegion = SalesThisYear.Where(x => x.NUTScode == regioncode).OrderBy(x => x.price).ToList();
+                        List<PricePaid> RealSalesIntheRegion = SalesThisYear.Where(x => x.NUTScode == regioncode).OrderBy(x => x.deflatedPrice).ToList();
+                        List<PricePaid> NominalSalesIntheRegion = SalesThisYear.Where(x => x.NUTScode == regioncode).OrderBy(x => x.price).ToList();
 
-                        int medianPrice = 0;
-                        if (SalesIntheRegion.Count > 1)
+                        int medianNominalPrice = 0;
+                        int medianRealPrice = 0;
+                        if (RealSalesIntheRegion.Count > 1)
                         {
                             // this isn't precisely the median -- but the tiny error it introduces is so small that it doesn't matter. And it's worth it for the simplicity of the outcome.
-                            medianPrice = SalesIntheRegion.ElementAt((int)Math.Floor((decimal)SalesIntheRegion.Count / 2)).price;
+                            medianNominalPrice = NominalSalesIntheRegion.ElementAt((int)Math.Floor((decimal)NominalSalesIntheRegion.Count / 2)).price;
+                            medianRealPrice = RealSalesIntheRegion.ElementAt((int)Math.Floor((decimal)RealSalesIntheRegion.Count / 2)).deflatedPrice;
                         }
-                        outputText.Add(regioncode + "\t" + Year + "\t" + medianPrice + "\t" + SalesIntheRegion.Count);
+                        RealOutputText.Add(regioncode + "\t" + Year + "\t" + medianRealPrice + "\t" + RealSalesIntheRegion.Count);
+                        NominalOutputText.Add(regioncode + "\t" + Year + "\t" + medianNominalPrice + "\t" + NominalSalesIntheRegion.Count);
                         //await FileIO.AppendTextAsync(OutputFile, regioncode + "\t" + Year + "\t" + medianPrice + "\n");
                         regioncount++;
                         if (regioncount % 1 == 0)
@@ -392,16 +470,19 @@ namespace Prices_Paid_WPF
                         }
                     }
                 }
-                File.AppendAllLines("./pricespaidbyward.tsv", outputText);
+                File.AppendAllLines("./pricespaidbyward_2017£s.tsv", RealOutputText);
+                File.AppendAllLines("./pricespaidbyward_nominal.tsv", NominalOutputText);
             }
-            Status.Text = "Calculations done. Output written to pricespaidbyward.tsv.";
+            Status.Text = "Calculations done. Output written to pricespaidbyward_2017£s.tsv and pricespaidbyward_nominal.tsv.";
         }
 
         public class PricePaid
         {
             //public DateTime saleDate { get; set; }
             public int year { get; set; }
+            public int month { get; set; }
             public int price { get; set; }
+            public int deflatedPrice { get; set; }
             public string wardcode { get; set; }
             public string districtcode { get; set; }
             public string NUTScode { get; set; }
