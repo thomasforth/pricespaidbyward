@@ -26,7 +26,7 @@ The prices paid dataset reports sales data for five types of housing. Specifical
 There are two possible values for PPD Category Type in the prices paid dataset. We exclude type "B" as these homes are sold at something other than the full market value. [Further explanation](https://www.gov.uk/guidance/about-the-price-paid-data#explanations-of-column-headers-in-the-ppd).
 
 ## Inflation
-Prices are expressed in constant 2017 £s (July 2017 = 100), deflated using [The ONS monthly CPI deflator](https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/d7bt/mm23).
+Prices are output both in nominal £s and in constant 2017 £s (July 2017 = 100), deflated using [The ONS monthly CPI deflator](https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/d7bt/mm23).
 
 ## Attributions
 The code itself relies on no other work, but the included data files have licenses.
