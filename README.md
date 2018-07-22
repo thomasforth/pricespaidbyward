@@ -1,6 +1,8 @@
 # pricespaidbyward
 Using [Land Registry open data on home sales prices](http://landregistry.data.gov.uk/) to calculate the median price paid for UK home sales by ward, local authority, NUTS2 region, and 2017 UK Parliamentary constituency in England & Wales.
 
+You can set similar data for Scotland from [Statistics Scotland](http://statistics.gov.scot/resource?uri=http%3A%2F%2Fstatistics.gov.scot%2Fdata%2Fhouse-sales-prices).
+
 ## Usage
 The software is written in C# and WPF. The included binary should run on any x64 Windows machine. You will need about 5GB of free RAM to parse the full prices paid file but much less to parse a monthly extract. The software expects four files to be in the same folder as the .exe,
 1. `Postcode_to_LocalAuthorityCode_to_Wardcode.csv`
